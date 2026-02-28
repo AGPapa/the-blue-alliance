@@ -3,6 +3,7 @@ from typing import List, Optional, Tuple
 from google.appengine.ext import ndb
 
 from backend.common.frc_api.types import SeasonTeamListModelV2, SeasonTeamModelV2
+from backend.common.helpers.sub_district_helper import SubDistrictHelper
 from backend.common.helpers.website_helper import WebsiteHelper
 from backend.common.models.district import District
 from backend.common.models.district_team import DistrictTeam
@@ -73,6 +74,9 @@ class FMSAPITeamDetailsParser(
                     team=ndb.Key(Team, team.key_name),
                     year=self.year,
                     district_key=ndb.Key(District, districtKey),
+                    sub_district=SubDistrictHelper.get_sub_district(
+                        districtKey, team.key_name, teamData["city"]
+                    ),
                 )
 
             robot = None

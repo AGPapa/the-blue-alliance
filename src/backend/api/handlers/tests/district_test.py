@@ -290,6 +290,12 @@ def test_district_rankings(ndb_stub, api_client: Client) -> None:
         abbreviation="fim",
         rankings=rankings,
     ).put()
+    DistrictTeam(
+        id="2020fim_frc604",
+        district_key=ndb.Key(District, "2020fim"),
+        team=ndb.Key("Team", "frc604"),
+        year=2020,
+    ).put()
 
     # Test empty rankings
     resp = api_client.get(
@@ -303,7 +309,63 @@ def test_district_rankings(ndb_stub, api_client: Client) -> None:
         "/api/v3/district/2020fim/rankings", headers={"X-TBA-Auth-Key": "test_auth_key"}
     )
     assert resp.status_code == 200
-    assert resp.json == rankings
+    assert len(resp.json) == 1
+    assert resp.json[0]["team_key"] == "frc604"
+    assert resp.json[0]["rank"] == 13
+    assert resp.json[0]["point_total"] == 50
+    assert resp.json[0]["sub_district"] is None
+
+
+def test_district_rankings_sub_district(ndb_stub, api_client: Client) -> None:
+    ApiAuthAccess(
+        id="test_auth_key",
+        auth_types_enum=[AuthType.READ_API],
+    ).put()
+    rankings = [
+        DistrictRanking(
+            rank=1,
+            team_key="frc254",
+            point_total=100,
+            rookie_bonus=0,
+            event_points=[],
+        ),
+        DistrictRanking(
+            rank=2,
+            team_key="frc1678",
+            point_total=90,
+            rookie_bonus=0,
+            event_points=[],
+        ),
+    ]
+    District(
+        id="2026ca",
+        year=2026,
+        abbreviation="ca",
+        rankings=rankings,
+    ).put()
+    DistrictTeam(
+        id="2026ca_frc254",
+        district_key=ndb.Key(District, "2026ca"),
+        team=ndb.Key("Team", "frc254"),
+        year=2026,
+        sub_district="north",
+    ).put()
+    DistrictTeam(
+        id="2026ca_frc1678",
+        district_key=ndb.Key(District, "2026ca"),
+        team=ndb.Key("Team", "frc1678"),
+        year=2026,
+        sub_district="south",
+    ).put()
+
+    resp = api_client.get(
+        "/api/v3/district/2026ca/rankings", headers={"X-TBA-Auth-Key": "test_auth_key"}
+    )
+    assert resp.status_code == 200
+    assert len(resp.json) == 2
+    ranking_map = {r["team_key"]: r for r in resp.json}
+    assert ranking_map["frc254"]["sub_district"] == "north"
+    assert ranking_map["frc1678"]["sub_district"] == "south"
 
 
 def test_district_list_year(ndb_stub, api_client: Client) -> None:

@@ -1,4 +1,4 @@
-from typing import Set
+from typing import Optional, Set
 
 from google.appengine.ext import ndb
 
@@ -18,11 +18,17 @@ class DistrictTeam(CachedModel):
     year: Year = ndb.IntegerProperty()
     district_key = ndb.KeyProperty(kind=District)
 
+    # For districts with multiple championship pools (e.g. California "north"/"south"),
+    # identifies which pool this team belongs to for DCMP qualification.
+    # None for districts with a single championship.
+    sub_district: Optional[str] = ndb.StringProperty()
+
     created = ndb.DateTimeProperty(auto_now_add=True, indexed=False)
     updated = ndb.DateTimeProperty(auto_now=True, indexed=False)
 
     _mutable_attrs: Set[str] = {
         "district_key",  # for migrations
+        "sub_district",
     }
 
     def __init__(self, *args, **kw):

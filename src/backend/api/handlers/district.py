@@ -1,6 +1,7 @@
-from typing import Optional
+from typing import Dict, Optional
 
 from flask import Response
+from google.appengine.ext import ndb
 
 from backend.api.handlers.decorators import api_authenticated, validate_keys
 from backend.api.handlers.helpers.model_properties import (
@@ -13,6 +14,8 @@ from backend.api.handlers.helpers.track_call import track_call_after_response
 from backend.common.consts.api_version import ApiMajorVersion
 from backend.common.consts.event_type import EventType
 from backend.common.decorators import cached_public
+from backend.common.models.district import District
+from backend.common.models.district_team import DistrictTeam
 from backend.common.models.insight import Insight
 from backend.common.models.keys import DistrictAbbreviation, DistrictKey
 from backend.common.queries.award_query import EventAwardsQuery
@@ -24,6 +27,14 @@ from backend.common.queries.district_query import (
 from backend.common.queries.event_query import DistrictEventsQuery
 from backend.common.queries.insight_query import DistrictInsightQuery
 from backend.common.queries.team_query import DistrictTeamsQuery
+
+
+def _get_sub_district_map(district_key: DistrictKey) -> Dict[str, Optional[str]]:
+    """Build a team_key -> sub_district mapping for all teams in a district."""
+    district_teams = DistrictTeam.query(
+        DistrictTeam.district_key == ndb.Key(District, district_key)
+    ).fetch(projection=[DistrictTeam.team, DistrictTeam.sub_district])
+    return {dt.team.id(): dt.sub_district for dt in district_teams}
 
 
 @api_authenticated
@@ -89,7 +100,12 @@ def district_rankings(district_key: DistrictKey) -> Response:
     track_call_after_response("district/rankings", district_key)
 
     district = DistrictQuery(district_key=district_key).fetch()
-    return profiled_jsonify(district.rankings)
+    rankings = district.rankings
+    if rankings is not None:
+        sub_district_map = _get_sub_district_map(district_key)
+        for ranking in rankings:
+            ranking["sub_district"] = sub_district_map.get(ranking["team_key"])
+    return profiled_jsonify(rankings)
 
 
 @api_authenticated

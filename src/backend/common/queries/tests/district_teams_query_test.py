@@ -24,13 +24,18 @@ def preseed_teams(start_team: int, end_team: Optional[int] = None) -> List[ndb.K
     return stored
 
 
-def preseed_district_teams(team_keys: List[ndb.Key], district_key: DistrictKey) -> None:
+def preseed_district_teams(
+    team_keys: List[ndb.Key],
+    district_key: DistrictKey,
+    sub_district: Optional[str] = None,
+) -> None:
     district_teams = [
         DistrictTeam(
             id=f"{district_key}_{t.id()}",
             team=t,
             district_key=ndb.Key(District, district_key),
             year=int(district_key[:4]),
+            sub_district=sub_district,
         )
         for t in team_keys
     ]
@@ -48,3 +53,14 @@ def test_get_teams() -> None:
 
     teams = DistrictTeamsQuery(district_key="2019ne").fetch()
     assert len(teams) == len(stored_teams)
+
+
+def test_sub_district_preseed() -> None:
+    north_teams = preseed_teams(1, 5)
+    south_teams = preseed_teams(6, 10)
+
+    preseed_district_teams(north_teams, "2026ca", sub_district="north")
+    preseed_district_teams(south_teams, "2026ca", sub_district="south")
+
+    all_result = DistrictTeamsQuery(district_key="2026ca").fetch()
+    assert len(all_result) == 10

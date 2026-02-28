@@ -1,4 +1,4 @@
-from typing import List, NotRequired, TypedDict
+from typing import List, NotRequired, Optional, TypedDict
 
 from backend.common.models.event_district_points import TeamAtEventDistrictPoints
 from backend.common.models.keys import TeamKey
@@ -12,3 +12,4 @@ class DistrictRanking(TypedDict):
     other_bonus: NotRequired[int]
     adjustments: NotRequired[int]
     event_points: List[TeamAtEventDistrictPoints]
+    sub_district: NotRequired[Optional[str]]

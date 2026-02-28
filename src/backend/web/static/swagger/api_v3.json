@@ -5411,6 +5411,10 @@
           "other_bonus": {
             "type": "integer",
             "description": "Any other bonus points awarded to the team."
+          },
+          "sub_district": {
+            "type": ["string", "null"],
+            "description": "The sub-district pool this team belongs to for DCMP qualification (e.g. \"north\" or \"south\" for California). Null for districts with a single championship."
           }
         },
         "description": "Rank of a team in a district."

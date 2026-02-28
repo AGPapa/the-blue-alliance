@@ -40,6 +40,7 @@ def test_parse_team_with_district(test_data_importer, ndb_stub):
     assert districtTeam.key_name == "2015ne_frc1124"
     assert districtTeam.team.string_id() == "frc1124"
     assert districtTeam.district_key, ndb.Key(District == "2015ne")
+    assert districtTeam.sub_district is None
 
     # Test the Robot model we get back
     assert robot is not None

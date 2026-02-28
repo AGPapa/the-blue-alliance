@@ -24,3 +24,24 @@ def test_key_name() -> None:
         year=2010,
     )
     assert dt.key_name == "2010ne_frc177"
+
+
+def test_sub_district_default_none() -> None:
+    dt = DistrictTeam(
+        id="2026ca_frc254",
+        district_key=ndb.Key(District, "2026ca"),
+        team=ndb.Key(Team, "frc254"),
+        year=2026,
+    )
+    assert dt.sub_district is None
+
+
+def test_sub_district_set() -> None:
+    dt = DistrictTeam(
+        id="2026ca_frc254",
+        district_key=ndb.Key(District, "2026ca"),
+        team=ndb.Key(Team, "frc254"),
+        year=2026,
+        sub_district="north",
+    )
+    assert dt.sub_district == "north"
