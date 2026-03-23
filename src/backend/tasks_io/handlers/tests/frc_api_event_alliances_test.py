@@ -173,6 +173,24 @@ def test_get_no_alliances(fmsapi_event_alliances_mock, tasks_client: Client) -> 
 
 
 @mock.patch.object(DatafeedFMSAPI, "get_event_alliances")
+def test_get_empty_api_response_preserves_stored_alliances(
+    fmsapi_event_alliances_mock,
+    tasks_client: Client,
+) -> None:
+    create_event(official=True)
+    existing = [EventAlliance(picks=["frc254", "frc1678"])]
+    EventDetails(id="2020nyny", alliance_selections=existing).put()
+    fmsapi_event_alliances_mock.return_value = InstantFuture([])
+
+    resp = tasks_client.get("/tasks/get/fmsapi_event_alliances/2020nyny")
+    assert resp.status_code == 200
+
+    details = EventDetails.get_by_id("2020nyny")
+    assert details is not None
+    assert details.alliance_selections == existing
+
+
+@mock.patch.object(DatafeedFMSAPI, "get_event_alliances")
 def test_get_no_events_no_output_in_taskqueue(
     fmsapi_event_alliances_mock, tasks_client: Client
 ) -> None:

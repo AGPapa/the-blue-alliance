@@ -239,3 +239,31 @@ class TestEventDetailsManipulator(unittest.TestCase):
 
         # Event is not configured to be within a day - skip it
         mock_alliance_selection.assert_not_called()
+
+    def test_empty_alliance_selections_does_not_wipe_existing(self):
+        EventDetailsManipulator.createOrUpdate(self.old_event_details)
+        empty = EventDetails(id="2011ct", alliance_selections=[])
+        EventDetailsManipulator.createOrUpdate(empty, update_manual_attrs=False)
+        stored = none_throws(EventDetails.get_by_id("2011ct"))
+        self.assertEqual(stored.alliance_selections, self.old_alliance_selections)
+
+    def test_empty_rankings2_does_not_wipe_existing(self):
+        rankings = [
+            {
+                "rank": 1,
+                "team_key": "frc254",
+                "record": None,
+                "qual_average": None,
+                "matches_played": 1,
+                "dq": 0,
+                "sort_orders": [],
+            }
+        ]
+        EventDetailsManipulator.createOrUpdate(
+            EventDetails(id="2011ct", rankings2=rankings)
+        )
+        EventDetailsManipulator.createOrUpdate(
+            EventDetails(id="2011ct", rankings2=[]), update_manual_attrs=False
+        )
+        stored = none_throws(EventDetails.get_by_id("2011ct"))
+        self.assertEqual(stored.rankings2, rankings)

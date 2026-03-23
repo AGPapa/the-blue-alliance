@@ -410,7 +410,15 @@ class ManipulatorBase(abc.ABC, Generic[TModel]):
                 getattr(new_model, attr, None) is not None
                 or attr in old_model._allow_none_attrs
             ):
-                if getattr(new_model, attr) != getattr(old_model, attr):
+                skip_empty_overwrite = (
+                    isinstance(getattr(new_model, attr), list)
+                    and len(getattr(new_model, attr)) == 0
+                    and getattr(old_model, attr) is not None
+                    and len(getattr(old_model, attr)) > 0
+                )
+                if not skip_empty_overwrite and getattr(new_model, attr) != getattr(
+                    old_model, attr
+                ):
                     setattr(old_model, attr, getattr(new_model, attr))
                     updated_attrs.add(attr)
                     old_model._dirty = True
