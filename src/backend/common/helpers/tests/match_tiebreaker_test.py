@@ -109,3 +109,17 @@ def test_2025_tiebreakers(test_data_importer) -> None:
     test_data_importer.import_match(__file__, "data/2025vagle_sf8m1.json")
     match: Match = none_throws(Match.get_by_id("2025vagle_sf8m1"))
     assert match.winning_alliance == AllianceColor.BLUE
+
+
+def test_2026_tiebreakers(test_data_importer) -> None:
+    # 2026 FMA District Philadelphia SF10-1: tied 108–108; Table 10-3 2nd criterion
+    # (ALLIANCE AUTO FUEL points) awards the win to blue (35 vs 21).
+    test_data_importer.import_match(__file__, "data/2026paphi_sf10m1.json")
+    match: Match = none_throws(Match.get_by_id("2026paphi_sf10m1"))
+    assert match.winning_alliance == AllianceColor.BLUE
+
+    # 2026 FSC District Richland SF5-1: tied 66–66; Table 10-3 1st criterion
+    # (opponent major fouls) awards the win to red (blue committed 1 major).
+    test_data_importer.import_match(__file__, "data/2026schop_sf5m1.json")
+    schop: Match = none_throws(Match.get_by_id("2026schop_sf5m1"))
+    assert schop.winning_alliance == AllianceColor.RED

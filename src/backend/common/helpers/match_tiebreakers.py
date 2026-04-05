@@ -71,6 +71,11 @@ class MatchTiebreakers(object):
         ):  # Finals can't be tiebroken. Only overtime
             tiebreakers = cls._tiebreak_2025(red_breakdown, blue_breakdown)
 
+        elif match.year == 2026 and not (
+            match.comp_level == CompLevel.F and match.match_number <= 3
+        ):  # Finals can't be tiebroken. Only overtime
+            tiebreakers = cls._tiebreak_2026(red_breakdown, blue_breakdown)
+
         else:
             tiebreakers = []
 
@@ -82,6 +87,52 @@ class MatchTiebreakers(object):
             elif tiebreaker[1] > tiebreaker[0]:
                 return AllianceColor.BLUE
         return ""
+
+    @classmethod
+    def _tiebreak_2026(
+        cls, red_breakdown: Dict, blue_breakdown: Dict
+    ) -> List[TCriteria]:
+        tiebreakers: List[TCriteria] = []
+
+        # Cumulative MAJOR FOUL points due to opponent rule violations
+        # Since major foul points are not provided separately, use opponent major foul count.
+        if "majorFoulCount" in red_breakdown and "majorFoulCount" in blue_breakdown:
+            tiebreakers.append(
+                (blue_breakdown["majorFoulCount"], red_breakdown["majorFoulCount"])
+            )
+        else:
+            tiebreakers.append(None)
+
+        # ALLIANCE AUTO FUEL points (hub / processor scoring in AUTO)
+        red_hub = red_breakdown.get("hubScore")
+        blue_hub = blue_breakdown.get("hubScore")
+        if (
+            isinstance(red_hub, dict)
+            and isinstance(blue_hub, dict)
+            and "autoPoints" in red_hub
+            and "autoPoints" in blue_hub
+        ):
+            tiebreakers.append(
+                (
+                    red_hub["autoPoints"],
+                    blue_hub["autoPoints"],
+                )
+            )
+        else:
+            tiebreakers.append(None)
+
+        # ALLIANCE TOWER points
+        if "totalTowerPoints" in red_breakdown and "totalTowerPoints" in blue_breakdown:
+            tiebreakers.append(
+                (
+                    red_breakdown["totalTowerPoints"],
+                    blue_breakdown["totalTowerPoints"],
+                )
+            )
+        else:
+            tiebreakers.append(None)
+
+        return tiebreakers
 
     @classmethod
     def _tiebreak_2025(
