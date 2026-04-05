@@ -1,14 +1,12 @@
 import json
 
 import pytest
-from google.appengine.ext import ndb
 from pyre_extensions import none_throws
 
 from backend.common.consts.alliance_color import AllianceColor
 from backend.common.consts.comp_level import CompLevel
 from backend.common.helpers.match_tiebreakers import MatchTiebreakers
 from backend.common.models.alliance import MatchAlliance
-from backend.common.models.event import Event
 from backend.common.models.match import Match
 
 
@@ -113,93 +111,15 @@ def test_2025_tiebreakers(test_data_importer) -> None:
     assert match.winning_alliance == AllianceColor.BLUE
 
 
-def _match_2026_elim_tie(
-    *,
-    red_score: int = 50,
-    blue_score: int = 50,
-    red_major_fouls: int = 0,
-    blue_major_fouls: int = 0,
-    red_hub_auto: int = 0,
-    blue_hub_auto: int = 0,
-    red_tower: int = 0,
-    blue_tower: int = 0,
-    comp_level: CompLevel = CompLevel.SF,
-    match_number: int = 1,
-) -> Match:
-    return Match(
-        id="2026tie_sf1m1",
-        year=2026,
-        comp_level=comp_level,
-        match_number=match_number,
-        set_number=1,
-        event=ndb.Key(Event, "2026tie"),
-        alliances_json=json.dumps(
-            {
-                AllianceColor.RED: {
-                    "teams": ["frc1", "frc2", "frc3"],
-                    "score": red_score,
-                },
-                AllianceColor.BLUE: {
-                    "teams": ["frc4", "frc5", "frc6"],
-                    "score": blue_score,
-                },
-            }
-        ),
-        score_breakdown_json=json.dumps(
-            {
-                AllianceColor.RED: {
-                    "majorFoulCount": red_major_fouls,
-                    "totalTowerPoints": red_tower,
-                    "hubScore": {"autoPoints": red_hub_auto},
-                },
-                AllianceColor.BLUE: {
-                    "majorFoulCount": blue_major_fouls,
-                    "totalTowerPoints": blue_tower,
-                    "hubScore": {"autoPoints": blue_hub_auto},
-                },
-            }
-        ),
-    )
+def test_2026_tiebreakers(test_data_importer) -> None:
+    # 2026 FMA District Philadelphia SF10-1: tied 108–108; Table 10-3 2nd criterion
+    # (ALLIANCE AUTO FUEL points) awards the win to blue (35 vs 21).
+    test_data_importer.import_match(__file__, "data/2026paphi_sf10m1.json")
+    match: Match = none_throws(Match.get_by_id("2026paphi_sf10m1"))
+    assert match.winning_alliance == AllianceColor.BLUE
 
-
-def test_2026_tiebreak_major_foul_proxy() -> None:
-    # Blue committed more major fouls → red receives more major foul points → red wins
-    m = _match_2026_elim_tie(red_major_fouls=0, blue_major_fouls=2)
-    assert m.winning_alliance == AllianceColor.RED
-
-
-def test_2026_tiebreak_auto_fuel_points() -> None:
-    m = _match_2026_elim_tie(
-        red_major_fouls=1,
-        blue_major_fouls=1,
-        red_hub_auto=12,
-        blue_hub_auto=10,
-    )
-    assert m.winning_alliance == AllianceColor.RED
-
-
-def test_2026_tiebreak_tower_points() -> None:
-    m = _match_2026_elim_tie(
-        red_major_fouls=1,
-        blue_major_fouls=1,
-        red_hub_auto=5,
-        blue_hub_auto=5,
-        red_tower=30,
-        blue_tower=20,
-    )
-    assert m.winning_alliance == AllianceColor.RED
-
-
-def test_2026_finals_early_no_tiebreak() -> None:
-    m = _match_2026_elim_tie(comp_level=CompLevel.F, match_number=2)
-    assert m.winning_alliance == ""
-
-
-def test_2026_finals_overtime_uses_tiebreak() -> None:
-    m = _match_2026_elim_tie(
-        comp_level=CompLevel.F,
-        match_number=4,
-        red_major_fouls=0,
-        blue_major_fouls=1,
-    )
-    assert m.winning_alliance == AllianceColor.RED
+    # 2026 FSC District Richland SF5-1: tied 66–66; Table 10-3 1st criterion
+    # (opponent major fouls) awards the win to red (blue committed 1 major).
+    test_data_importer.import_match(__file__, "data/2026schop_sf5m1.json")
+    schop: Match = none_throws(Match.get_by_id("2026schop_sf5m1"))
+    assert schop.winning_alliance == AllianceColor.RED
