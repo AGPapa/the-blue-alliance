@@ -6064,7 +6064,7 @@
             "additionalProperties": {
               "type": "object",
               "properties": {
-                "highest_qual_scores": {
+                "highest_match_scores": {
                   "type": "array",
                   "items": {
                     "type": "integer"
